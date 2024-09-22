@@ -80,104 +80,112 @@ if "tle_line1" in st.session_state and "tle_line2" in st.session_state:
     tle_line1 = st.session_state.tle_line1
     tle_line2 = st.session_state.tle_line2
 
-    # 地上局を設定
-    latitude = st.text_input("Latitude (緯度)", "35.9864")
-    longitude = st.text_input("Longitude (経度)", "139.3739")
-    elevation = st.number_input("Altitude (高度, m)", value=0)
+    # TLEデータが空でないか確認
+    if not tle_line1 or not tle_line2:
+        st.error("TLEデータが無効です。再度取得またはアップロードしてください。")
+    else:
+        # 地上局を設定
+        latitude = st.text_input("Latitude (緯度)", "35.9864")
+        longitude = st.text_input("Longitude (経度)", "139.3739")
+        elevation = st.number_input("Altitude (高度, m)", value=0)
 
-    # Start DateとEnd Dateの入力欄 (初期値は今日とその1ヶ月後)
-    start_date = st.date_input("Start Date (開始日)", value=st.session_state.get('start_date', default_start_date))
-    end_date = st.date_input("End Date (終了日)", value=st.session_state.get('end_date', default_end_date))
+        # Start DateとEnd Dateの入力欄 (初期値は今日とその1ヶ月後)
+        start_date = st.date_input("Start Date (開始日)", value=st.session_state.get('start_date', default_start_date))
+        end_date = st.date_input("End Date (終了日)", value=st.session_state.get('end_date', default_end_date))
 
-    # ユーザーの入力を保存
-    st.session_state['start_date'] = start_date
-    st.session_state['end_date'] = end_date
+        # ユーザーの入力を保存
+        st.session_state['start_date'] = start_date
+        st.session_state['end_date'] = end_date
 
-    # 計算ボタンが押された場合のみ計算を実行
-    if st.button("Calculate Passes"):
-        observer = ephem.Observer()
-        observer.lat = latitude
-        observer.lon = longitude
-        observer.elevation = elevation
+        # 計算ボタンが押された場合のみ計算を実行
+        if st.button("Calculate Passes"):
+            observer = ephem.Observer()
+            observer.lat = latitude
+            observer.lon = longitude
+            observer.elevation = elevation
 
-        # 衛星データを設定
-        satellite = ephem.readtle("SAT", tle_line1, tle_line2)
+            try:
+                # 衛星データを設定
+                satellite = ephem.readtle("SAT", tle_line1, tle_line2)
 
-        # 開始日と終了日を設定
-        start_datetime = datetime.combine(start_date, datetime.min.time())
-        end_datetime = datetime.combine(end_date, datetime.min.time())
+                # 開始日と終了日を設定
+                start_datetime = datetime.combine(start_date, datetime.min.time())
+                end_datetime = datetime.combine(end_date, datetime.min.time())
 
-        # AOS、LOS、最大仰角のリストを初期化
-        data = []
-        current_time = start_datetime
+                # AOS、LOS、最大仰角のリストを初期化
+                data = []
+                current_time = start_datetime
 
-        # 指定された期間で衛星のパスを計算
-        while current_time < end_datetime:
-            observer.date = current_time
-            satellite.compute(observer)
-            
-            # 1日あたりのパスを全て記録するためのループ
-            while True:
-                aos_list = []
-                los_list = []
-                max_elevation_list = []
-                azimuth_elevation_data = []  # 方位角と仰角のデータを保存
-
-                # AOS（信号取得）を探す
-                observer.date = current_time
-                satellite.compute(observer)
-                aos_time = observer.date.datetime()
-
-                # 仰角が1度以上のタイミングを探す
-                while satellite.alt < 1 * ephem.degree:
-                    current_time += timedelta(seconds=10)
+                # 指定された期間で衛星のパスを計算
+                while current_time < end_datetime:
                     observer.date = current_time
                     satellite.compute(observer)
-                    aos_time = observer.date.datetime()
+                    
+                    # 1日あたりのパスを全て記録するためのループ
+                    while True:
+                        aos_list = []
+                        los_list = []
+                        max_elevation_list = []
+                        azimuth_elevation_data = []  # 方位角と仰角のデータを保存
 
-                aos_list.append(aos_time)
-                
-                # LOS（信号喪失）を探す
-                while satellite.alt > 1 * ephem.degree:
-                    max_elevation_list.append((observer.date.datetime(), satellite.alt))
-                    azimuth_elevation_data.append((satellite.az, satellite.alt))  # 方位角と仰角を保存
-                    current_time += timedelta(seconds=10)
-                    observer.date = current_time
-                    satellite.compute(observer)
-                    los_time = observer.date.datetime()
+                        # AOS（信号取得）を探す
+                        observer.date = current_time
+                        satellite.compute(observer)
+                        aos_time = observer.date.datetime()
 
-                los_list.append(los_time)
+                        # 仰角が1度以上のタイミングを探す
+                        while satellite.alt < 1 * ephem.degree:
+                            current_time += timedelta(seconds=10)
+                            observer.date = current_time
+                            satellite.compute(observer)
+                            aos_time = observer.date.datetime()
 
-                # 仰角の最大値を計算
-                if max_elevation_list:
-                    max_elevation_time, max_elevation = max(max_elevation_list, key=lambda x: x[1])
-                else:
-                    max_elevation_time, max_elevation = None, None
+                        aos_list.append(aos_time)
+                        
+                        # LOS（信号喪失）を探す
+                        while satellite.alt > 1 * ephem.degree:
+                            max_elevation_list.append((observer.date.datetime(), satellite.alt))
+                            azimuth_elevation_data.append((satellite.az, satellite.alt))  # 方位角と仰角を保存
+                            current_time += timedelta(seconds=10)
+                            observer.date = current_time
+                            satellite.compute(observer)
+                            los_time = observer.date.datetime()
 
-                # AOSとLOSのデータが揃ったら記録
-                if aos_list and los_list:
-                    visible_time = (los_list[0] - aos_list[0]).total_seconds()
-                    data.append({
-                        "Day": aos_list[0].strftime('%Y-%m-%d'),
-                        "AOS(JST)": aos_list[0].astimezone(JST).strftime('%H:%M:%S'),
-                        "LOS(JST)": los_list[0].astimezone(JST).strftime('%H:%M:%S'),
-                        "MEL": max_elevation * (180.0 / ephem.pi),  # 最大仰角を度に変換
-                        "T-MEL(JST)": max_elevation_time.astimezone(JST).strftime('%H:%M:%S') if max_elevation_time else None,
-                        "VTIME(s)": visible_time,
-                        "SAT": spacecraft,
-                        "Az-El Data": azimuth_elevation_data  # 方位角-仰角データ
-                    })
+                        los_list.append(los_time)
 
-                # その日の最後のパスに到達した場合、次の日へ
-                if observer.date.datetime().date() != aos_list[0].date():
-                    break
-            
-            # 翌日に進む
-            current_time = datetime.combine(current_time.date() + timedelta(days=1), datetime.min.time())
+                        # 仰角の最大値を計算
+                        if max_elevation_list:
+                            max_elevation_time, max_elevation = max(max_elevation_list, key=lambda x: x[1])
+                        else:
+                            max_elevation_time, max_elevation = None, None
 
-        # データをDataFrameに変換して表示
-        df = pd.DataFrame(data)
-        st.session_state['pass_data'] = df  # セッションステートに保存
+                        # AOSとLOSのデータが揃ったら記録
+                        if aos_list and los_list:
+                            visible_time = (los_list[0] - aos_list[0]).total_seconds()
+                            data.append({
+                                "Day": aos_list[0].strftime('%Y-%m-%d'),
+                                "AOS(JST)": aos_list[0].astimezone(JST).strftime('%H:%M:%S'),
+                                "LOS(JST)": los_list[0].astimezone(JST).strftime('%H:%M:%S'),
+                                "MEL": max_elevation * (180.0 / ephem.pi),  # 最大仰角を度に変換
+                                "T-MEL(JST)": max_elevation_time.astimezone(JST).strftime('%H:%M:%S') if max_elevation_time else None,
+                                "VTIME(s)": visible_time,
+                                "SAT": spacecraft,
+                                "Az-El Data": azimuth_elevation_data  # 方位角-仰角データ
+                            })
+
+                        # その日の最後のパスに到達した場合、次の日へ
+                        if observer.date.datetime().date() != aos_list[0].date():
+                            break
+                    
+                    # 翌日に進む
+                    current_time = datetime.combine(current_time.date() + timedelta(days=1), datetime.min.time())
+
+                # データをDataFrameに変換して表示
+                df = pd.DataFrame(data)
+                st.session_state['pass_data'] = df  # セッションステートに保存
+
+            except Exception as e:
+                st.error(f"エラーが発生しました: {e}")
 
 # セッションステートからデータを取得して表示
 if 'pass_data' in st.session_state:

@@ -188,6 +188,10 @@ if "tle_line1" in st.session_state and "tle_line2" in st.session_state:
                     # 翌日に進む
                     current_time = datetime.combine(current_time.date() + timedelta(days=1), datetime.min.time())
 
+                    # 終了条件を再確認：end_dateを超えたらループ終了
+                    if current_time > end_datetime:
+                        break
+
                 # データをDataFrameに変換して表示
                 df = pd.DataFrame(data)
                 st.session_state['pass_data'] = df  # セッションステートに保存

@@ -2,7 +2,7 @@ import streamlit as st
 import ephem
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone  # 修正済み
 import requests
 import matplotlib.pyplot as plt
 
@@ -134,17 +134,15 @@ if 'pass_data' in st.session_state:
     if selected_pass is not None:
         az_el_data = df.iloc[selected_pass]["Az-El Data"]
         azimuths = [x[0] for x in az_el_data]
-        elevations = [(x[1] * (180.0 / ephem.pi)) for x in az_el_data]  # 仰角を度に変換
+        elevations = [90 - (x[1] * (180.0 / ephem.pi)) for x in az_el_data]  # 仰角を反転して0-90度に変換
 
         # 方位角-仰角プロットを作成
         fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
         ax.plot(azimuths, elevations)
 
-        # 仰角のスケール表示を逆に設定（天頂が90度、地平線が0度になるように表示）
-        ax.set_ylim(0, 90)  
-        ax.set_yticks([0, 30, 60, 90])  # 仰角のラベルをカスタマイズ
-        ax.set_yticklabels(['90°', '60°', '30°', '0°'])  # ラベルを逆に設定
-
+        # 仰角のスケールを逆に設定（天頂が90度、地平線が0度）
+        ax.set_ylim(90, 0)  # ここを修正
+        
         # 方位角の設定：0度が北（上）、180度が南（下）
         ax.set_theta_zero_location('N')
         ax.set_theta_direction(-1)  # 反時計回りに設定

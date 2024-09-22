@@ -1,8 +1,10 @@
 import streamlit as st
 import ephem
 import pandas as pd
+import numpy as np
 from datetime import datetime, timedelta, timezone
 import requests
+import matplotlib.pyplot as plt
 
 # JSTへのタイムゾーン設定
 JST = timezone(timedelta(hours=9))
@@ -64,7 +66,8 @@ if st.button("Calculate Passes"):
             aos_list = []
             los_list = []
             max_elevation_list = []
-            
+            azimuth_elevation_data = []  # 方位角と仰角のデータを保存
+
             # AOS（信号取得）を探す
             observer.date = current_time
             satellite.compute(observer)
@@ -82,6 +85,7 @@ if st.button("Calculate Passes"):
             # LOS（信号喪失）を探す
             while satellite.alt > 1 * ephem.degree:
                 max_elevation_list.append((observer.date.datetime(), satellite.alt))
+                azimuth_elevation_data.append((satellite.az, satellite.alt))  # 方位角と仰角を保存
                 current_time += timedelta(seconds=10)
                 observer.date = current_time
                 satellite.compute(observer)
@@ -105,7 +109,8 @@ if st.button("Calculate Passes"):
                     "MEL": max_elevation * (180.0 / ephem.pi),  # 最大仰角を度に変換
                     "T-MEL(JST)": max_elevation_time.astimezone(JST).strftime('%H:%M:%S') if max_elevation_time else None,
                     "VTIME(s)": visible_time,
-                    "SAT": spacecraft
+                    "SAT": spacecraft,
+                    "Az-El Data": azimuth_elevation_data  # 方位角-仰角データ
                 })
 
             # その日の最後のパスに到達した場合、次の日へ
@@ -127,3 +132,18 @@ if st.button("Calculate Passes"):
         file_name="satellite_pass_data.csv",
         mime="text/csv",
     )
+
+    # パスを選択して方位角-仰角プロットを表示
+    selected_pass = st.selectbox("Select a pass to plot", df.index)
+    if selected_pass is not None:
+        az_el_data = df.iloc[selected_pass]["Az-El Data"]
+        azimuths = [x[0] for x in az_el_data]
+        elevations = [x[1] * (180.0 / ephem.pi) for x in az_el_data]  # 仰角を度に変換
+
+        # 方位角-仰角プロットを作成
+        fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
+        ax.plot(azimuths, elevations)
+        ax.set_ylim(0, 90)  # 仰角の範囲を0〜90度に設定
+        ax.set_title(f"Azimuth-Elevation Plot for {spacecraft} Pass")
+
+        st.pyplot(fig)

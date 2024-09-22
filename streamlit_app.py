@@ -25,11 +25,14 @@ def get_tle_from_file(uploaded_file):
     tle_data = uploaded_file.read().decode("utf-8")
     tle_lines = tle_data.splitlines()
 
-    # TLEファイルは通常2行（Line 1とLine 2）なので、それを取得
-    if len(tle_lines) >= 2:
-        return tle_lines[0], tle_lines[1]
+    # ファイルが3行以上であることを確認（1行目: 名前、2行目: Line1、3行目: Line2）
+    if len(tle_lines) >= 3:
+        satellite_name = tle_lines[0]
+        line1 = tle_lines[1]
+        line2 = tle_lines[2]
+        return satellite_name, line1, line2
     else:
-        raise ValueError("Invalid TLE file format")
+        raise ValueError("Invalid TLE file format. The file must contain at least 3 lines (satellite name, line 1, and line 2).")
 
 # 現在の日付を取得
 today = datetime.today()
@@ -49,7 +52,7 @@ st.session_state.tle_source = st.radio("TLE取得方法を選択してくださ�
                                        ("CelesTrakから取得", "TLEファイルをアップロード"),
                                        index=0 if st.session_state.tle_source == "CelesTrakから取得" else 1)
 
-tle_line1, tle_line2 = None, None  # TLEデータの初期化
+tle_name, tle_line1, tle_line2 = None, None, None  # TLEデータの初期化
 
 # CelesTrakから取得を選んだ場合
 if st.session_state.tle_source == "CelesTrakから取得":
@@ -68,10 +71,10 @@ elif st.session_state.tle_source == "TLEファイルをアップロード":
     uploaded_file = st.file_uploader("TLEファイルをアップロードしてください", type="txt")
     if uploaded_file is not None:
         try:
-            tle_line1, tle_line2 = get_tle_from_file(uploaded_file)
+            tle_name, tle_line1, tle_line2 = get_tle_from_file(uploaded_file)
             st.session_state.tle_line1 = tle_line1
             st.session_state.tle_line2 = tle_line2
-            st.success(f"TLEファイル読み込み成功:\n{tle_line1}\n{tle_line2}")
+            st.success(f"TLEファイル読み込み成功:\n{tle_name}\n{tle_line1}\n{tle_line2}")
         except Exception as e:
             st.error(f"エラーが発生しました: {e}")
 
@@ -106,7 +109,7 @@ if "tle_line1" in st.session_state and "tle_line2" in st.session_state:
 
             try:
                 # 衛星データを設定
-                satellite = ephem.readtle("SAT", tle_line1, tle_line2)
+                satellite = ephem.readtle(tle_name, tle_line1, tle_line2)
 
                 # 開始日と終了日を設定
                 start_datetime = datetime.combine(start_date, datetime.min.time())
@@ -169,7 +172,7 @@ if "tle_line1" in st.session_state and "tle_line2" in st.session_state:
                                 "MEL": max_elevation * (180.0 / ephem.pi),  # 最大仰角を度に変換
                                 "T-MEL(JST)": max_elevation_time.astimezone(JST).strftime('%H:%M:%S') if max_elevation_time else None,
                                 "VTIME(s)": visible_time,
-                                "SAT": spacecraft,
+                                "SAT": tle_name,
                                 "Az-El Data": azimuth_elevation_data  # 方位角-仰角データ
                             })
 

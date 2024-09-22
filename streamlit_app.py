@@ -120,7 +120,7 @@ if "tle_line1" in st.session_state and "tle_line2" in st.session_state:
                 current_time = start_datetime
 
                 # 指定された期間で衛星のパスを計算
-                while current_time < end_datetime:
+                while current_time <= end_datetime:  # <= に変更
                     observer.date = current_time
                     satellite.compute(observer)
                     
@@ -175,12 +175,8 @@ if "tle_line1" in st.session_state and "tle_line2" in st.session_state:
                             "Az-El Data": azimuth_elevation_data  # 方位角-仰角データ
                         })
 
-                    # current_timeが終了日を超えたら終了
-                    if current_time >= end_datetime:
-                        break
-
                     # 翌日に進む
-                    current_time = datetime.combine(current_time.date() + timedelta(days=1), datetime.min.time())
+                    current_time = datetime.combine(current_time.date() + timedelta(days=1), datetime.min.time())  # 翌日へ進む
 
                 # データをDataFrameに変換して表示
                 df = pd.DataFrame(data)

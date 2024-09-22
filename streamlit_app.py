@@ -22,10 +22,26 @@ def get_tle(spacecraft):
 # Streamlitアプリケーション
 st.title("Satellite Pass Prediction")
 
-# ユーザー入力フォーム
-latitude = st.text_input("Latitude (緯度)", "35.9864")
-longitude = st.text_input("Longitude (経度)", "139.3739")
-elevation = st.number_input("Altitude (高度, m)", value=0)
+# ユーザー入力フォームを1行にまとめる
+col1, col2 = st.columns([1, 3])
+with col1:
+    st.write("Latitude (緯度):")
+with col2:
+    latitude = st.text_input("", "35.9864")
+
+col3, col4 = st.columns([1, 3])
+with col3:
+    st.write("Longitude (経度):")
+with col4:
+    longitude = st.text_input("", "139.3739")
+
+col5, col6 = st.columns([1, 3])
+with col5:
+    st.write("Altitude (高度, m):")
+with col6:
+    elevation = st.number_input("", value=0)
+
+# 残りのフォーム（1行で十分なためそのまま）
 start_date = st.date_input("Start Date (開始日)", value=datetime(2024, 11, 20))
 end_date = st.date_input("End Date (終了日)", value=datetime(2025, 1, 20))
 spacecraft = st.text_input("Satellite (衛星名)", "ISS")

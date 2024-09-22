@@ -12,7 +12,7 @@ def get_tle(spacecraft):
     url = "https://celestrak.org/NORAD/elements/stations.txt"
     response = requests.get(url)
     tle_lines = response.text.splitlines()
-
+    
     # スペースクラフト名に部分一致するTLEを取得
     for i in range(0, len(tle_lines), 3):
         if spacecraft.lower() in tle_lines[i].lower():
@@ -22,28 +22,10 @@ def get_tle(spacecraft):
 # Streamlitアプリケーション
 st.title("Satellite Pass Prediction")
 
-# Latitude (緯度) と入力欄を同じ行に配置
-col1, col2 = st.columns([1, 3])  # カラム幅を1:3で分割
-with col1:
-    st.write("Latitude (緯度):")
-with col2:
-    latitude = st.text_input("", "35.9864")
-
-# Longitude (経度) と入力欄を同じ行に配置
-col3, col4 = st.columns([1, 3])
-with col3:
-    st.write("Longitude (経度):")
-with col4:
-    longitude = st.text_input("", "139.3739")
-
-# Altitude (高度) と入力欄を同じ行に配置
-col5, col6 = st.columns([1, 3])
-with col5:
-    st.write("Altitude (高度, m):")
-with col6:
-    elevation = st.number_input("", value=0)
-
-# 残りのフォーム（1行で十分なためそのまま）
+# ユーザー入力フォーム
+latitude = st.text_input("Latitude (緯度)", "35.9864")
+longitude = st.text_input("Longitude (経度)", "139.3739")
+elevation = st.number_input("Altitude (高度, m)", value=0)
 start_date = st.date_input("Start Date (開始日)", value=datetime(2024, 11, 20))
 end_date = st.date_input("End Date (終了日)", value=datetime(2025, 1, 20))
 spacecraft = st.text_input("Satellite (衛星名)", "ISS")
@@ -76,13 +58,13 @@ if st.button("Calculate Passes"):
     while current_time < end_datetime:
         observer.date = current_time
         satellite.compute(observer)
-
+        
         # 1日あたりのパスを全て記録するためのループ
         while True:
             aos_list = []
             los_list = []
             max_elevation_list = []
-
+            
             # AOS（信号取得）を探す
             observer.date = current_time
             satellite.compute(observer)
@@ -96,7 +78,7 @@ if st.button("Calculate Passes"):
                 aos_time = observer.date.datetime()
 
             aos_list.append(aos_time)
-
+            
             # LOS（信号喪失）を探す
             while satellite.alt > 1 * ephem.degree:
                 max_elevation_list.append((observer.date.datetime(), satellite.alt))
@@ -129,7 +111,7 @@ if st.button("Calculate Passes"):
             # その日の最後のパスに到達した場合、次の日へ
             if observer.date.datetime().date() != aos_list[0].date():
                 break
-
+        
         # 翌日に進む
         current_time = datetime.combine(current_time.date() + timedelta(days=1), datetime.min.time())
 

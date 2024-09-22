@@ -14,12 +14,8 @@ def get_tle(spacecraft):
     url = "https://celestrak.org/NORAD/elements/stations.txt"
     response = requests.get(url)
     tle_lines = response.text.splitlines()
-
-    # ISSの場合はZARYAを検索
-    if spacecraft.lower() == "iss":
-        spacecraft = "iss (zarya)"
     
-    # スペースクラフト名を部分一致で探す
+    # スペースクラフト名に部分一致するTLEを取得
     for i in range(0, len(tle_lines), 3):
         if spacecraft.lower() in tle_lines[i].lower():
             return tle_lines[i+1], tle_lines[i+2]

@@ -76,7 +76,7 @@ if "tle_line1" in st.session_state and "tle_line2" in st.session_state:
 
     # Start DateとEnd Dateの入力欄 (初期値は今日とその1ヶ月後)
     start_date = st.date_input("Start Date (開始日)", value=st.session_state.get('start_date', default_start_date))
-    end_date = st.date_input("End Date (終了日)", value=st.session_state.get('end_date', start_date + timedelta(days=30)))
+    end_date = st.date_input("End Date (終了日)", value=st.session_state.get('end_date', default_end_date))
 
     # ユーザーの入力を保存
     st.session_state['start_date'] = start_date

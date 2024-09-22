@@ -22,26 +22,28 @@ def get_tle(spacecraft):
 # Streamlitアプリケーション
 st.title("Satellite Pass Prediction")
 
-# ユーザー入力フォームを1行にまとめる
-col1, col2 = st.columns([1, 3])
-with col1:
-    st.write("Latitude (緯度):")
-with col2:
-    latitude = st.text_input("", "35.9864")
+# カスタムCSSで入力フォームを1行にするスタイルを適用
+st.markdown(
+    """
+    <style>
+    .input-container {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 10px;
+    }
+    .input-container label {
+        margin-right: 10px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-col3, col4 = st.columns([1, 3])
-with col3:
-    st.write("Longitude (経度):")
-with col4:
-    longitude = st.text_input("", "139.3739")
+# ユーザー入力フォーム（カスタムHTMLを使用）
+st.markdown('<div class="input-container"><label>Latitude (緯度):</label>' + st.text_input('', '35.9864') + '</div>', unsafe_allow_html=True)
+st.markdown('<div class="input-container"><label>Longitude (経度):</label>' + st.text_input('', '139.3739') + '</div>', unsafe_allow_html=True)
+st.markdown('<div class="input-container"><label>Altitude (高度, m):</label>' + str(st.number_input('', value=0)) + '</div>', unsafe_allow_html=True)
 
-col5, col6 = st.columns([1, 3])
-with col5:
-    st.write("Altitude (高度, m):")
-with col6:
-    elevation = st.number_input("", value=0)
-
-# 残りのフォーム（1行で十分なためそのまま）
+# 残りのフォーム
 start_date = st.date_input("Start Date (開始日)", value=datetime(2024, 11, 20))
 end_date = st.date_input("End Date (終了日)", value=datetime(2025, 1, 20))
 spacecraft = st.text_input("Satellite (衛星名)", "ISS")

@@ -15,9 +15,9 @@ def get_tle(spacecraft):
     response = requests.get(url)
     tle_lines = response.text.splitlines()
     
-    # スペースクラフト名に部分一致するTLEを取得
+    # スペースクラフト名を正確に探す
     for i in range(0, len(tle_lines), 3):
-        if spacecraft.lower() in tle_lines[i].lower():
+        if spacecraft.lower() in tle_lines[i].lower() or 'zarya' in tle_lines[i].lower():
             return tle_lines[i+1], tle_lines[i+2]
     raise ValueError(f"TLE for {spacecraft} not found.")
 

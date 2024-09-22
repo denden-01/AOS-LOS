@@ -20,6 +20,17 @@ def get_tle_from_celestrak(spacecraft):
             return tle_lines[i+1], tle_lines[i+2]
     raise ValueError(f"TLE for {spacecraft} not found.")
 
+# TLEファイルをアップロードする関数
+def get_tle_from_file(uploaded_file):
+    tle_data = uploaded_file.read().decode("utf-8")
+    tle_lines = tle_data.splitlines()
+
+    # TLEファイルは通常2行（Line 1とLine 2）なので、それを取得
+    if len(tle_lines) >= 2:
+        return tle_lines[0], tle_lines[1]
+    else:
+        raise ValueError("Invalid TLE file format")
+
 # 現在の日付を取得
 today = datetime.today()
 # Start Date = 今日, End Date = Start Dateから1ヶ月後

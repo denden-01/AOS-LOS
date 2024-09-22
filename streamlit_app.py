@@ -134,7 +134,9 @@ if 'pass_data' in st.session_state:
     if selected_pass is not None:
         az_el_data = df.iloc[selected_pass]["Az-El Data"]
         azimuths = [x[0] for x in az_el_data]
-        elevations = [90 - (x[1] * (180.0 / ephem.pi)) for x in az_el_data]  # 仰角を反転して0-90度に変換
+        elevations = [90 - (x[1] * (180.0 / ephem.pi)) for x in az_el_data]  
+
+# 仰角を反転して0-90度に変換
 
         # 方位角-仰角プロットを作成
         fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})

@@ -21,6 +21,10 @@ def get_tle(spacecraft):
     response = requests.get(url)
     tle_lines = response.text.splitlines()
     
+    # 取得したTLEデータを表示して確認
+    for line in tle_lines:
+        print(line)
+    
     # ISSの場合は専用のTLEを使用するので、最初の2行を返す
     if spacecraft.lower() == "iss" or spacecraft.lower() == "iss (zarya)":
         return tle_lines[1], tle_lines[2]
@@ -32,7 +36,6 @@ def get_tle(spacecraft):
     
     # スペースクラフト名が見つからない場合にエラーを返す
     raise ValueError(f"TLE for {spacecraft} not found.")
-
 
 # Streamlitアプリケーション
 st.title("Satellite Pass Prediction")

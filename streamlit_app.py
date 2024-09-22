@@ -1,7 +1,6 @@
 import streamlit as st
 import ephem
 import pandas as pd
-import numpy as np
 from datetime import datetime, timedelta, timezone
 import requests
 import matplotlib.pyplot as plt
@@ -20,18 +19,6 @@ def get_tle_from_celestrak(spacecraft):
         if spacecraft.lower() in tle_lines[i].lower():
             return tle_lines[i+1], tle_lines[i+2]
     raise ValueError(f"TLE for {spacecraft} not found.")
-
-# TLEをファイルからアップロードする関数
-def get_tle_from_file(uploaded_file):
-    # アップロードされたファイルを読み込む
-    tle_data = uploaded_file.read().decode("utf-8")
-    tle_lines = tle_data.splitlines()
-
-    # TLEファイルは2行セットなので、1行目と2行目を取得
-    if len(tle_lines) >= 2:
-        return tle_lines[0], tle_lines[1]
-    else:
-        raise ValueError("Invalid TLE file format")
 
 # 現在の日付を取得
 today = datetime.today()
@@ -86,11 +73,13 @@ if "tle_line1" in st.session_state and "tle_line2" in st.session_state:
     latitude = st.text_input("Latitude (緯度)", "35.9864")
     longitude = st.text_input("Longitude (経度)", "139.3739")
     elevation = st.number_input("Altitude (高度, m)", value=0)
+
     # Start DateとEnd Dateの入力欄 (初期値は今日とその1ヶ月後)
     start_date = st.date_input("Start Date (開始日)", value=default_start_date)
     end_date = st.date_input("End Date (終了日)", value=default_end_date)
 
-    if st.button("Calculate Passes") or 'pass_data' not in st.session_state:
+    # 計算ボタンが押された場合のみ計算を実行
+    if st.button("Calculate Passes"):
         observer = ephem.Observer()
         observer.lat = latitude
         observer.lon = longitude

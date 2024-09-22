@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 JST = timezone(timedelta(hours=9))
 
 # TLEデータをNASAのサイトから取得
-ef get_tle(spacecraft):
+def get_tle(spacecraft):
     url = "https://celestrak.org/NORAD/elements/stations.txt"
     response = requests.get(url)
     tle_lines = response.text.splitlines()

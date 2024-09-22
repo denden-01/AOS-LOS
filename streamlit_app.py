@@ -2,7 +2,7 @@ import streamlit as st
 import ephem
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta, timezone  # 修正
+from datetime import datetime, timedelta, timezone  # 修正済み
 import requests
 import matplotlib.pyplot as plt
 
@@ -140,8 +140,8 @@ if 'pass_data' in st.session_state:
         fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
         ax.plot(azimuths, elevations)
 
-        # プロットの中心を天頂（90度）、外側を水平線（0度）に設定
-        ax.set_ylim(0, 90)  
+        # 仰角のスケールを逆に設定（天頂が90度、地平線が0度）
+        ax.set_ylim(90, 0)  # ここを修正
         
         # 方位角の設定：0度が北（上）、180度が南（下）
         ax.set_theta_zero_location('N')

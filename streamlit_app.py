@@ -7,73 +7,17 @@ import requests
 # JSTへのタイムゾーン設定
 JST = timezone(timedelta(hours=9))
 
-# TLEデータをCelesTrakから取得する関数
-def get_tle_from_celestrak(spacecraft):
-    # ISS用の専用TLE URL
-    if spacecraft.lower() == "iss" or spacecraft.lower() == "iss (zarya)":
-        url = "https://celestrak.org/NORAD/elements/gp.php?CATNR=25544"
-    else:
-        url = "https://celestrak.org/NORAD/elements/stations.txt"
-    
+# TLEデータをNASAのサイトから取得
+def get_tle(spacecraft):
+    url = "https://celestrak.org/NORAD/elements/stations.txt"
     response = requests.get(url)
     tle_lines = response.text.splitlines()
     
-    # ISSの場合は専用のTLEを使用するので、最初の2行を返す
-    if spacecraft.lower() == "iss" or spacecraft.lower() == "iss (zarya)":
-        return tle_lines[1], tle_lines[2]
-    
-    # 他の衛星の場合は、通常の方法で検索
+    # スペースクラフト名に部分一致するTLEを取得
     for i in range(0, len(tle_lines), 3):
         if spacecraft.lower() in tle_lines[i].lower():
             return tle_lines[i+1], tle_lines[i+2]
-    
     raise ValueError(f"TLE for {spacecraft} not found.")
-
-# TLEをファイルからアップロードする関数
-def get_tle_from_file(uploaded_file):
-    # アップロードされたファイルを読み込む
-    tle_data = uploaded_file.read().decode("utf-8")
-    tle_lines = tle_data.splitlines()
-
-    # TLEファイルは2行セットなので、1行目と2行目を取得
-    if len(tle_lines) >= 2:
-        return tle_lines[0], tle_lines[1]
-    else:
-        raise ValueError("Invalid TLE file format")
-
-# StreamlitのUIを設定
-st.title("TLE取得方法の選択")
-
-# ユーザーに「CelesTrakからTLEを取得」か「TLEをアップロード」を選択させる
-option = st.radio("TLE取得方法を選択してください", ("CelesTrakから取得", "TLEファイルをアップロード"))
-
-tle_line1, tle_line2 = None, None  # TLEデータの初期化
-
-# CelesTrakから取得を選んだ場合
-if option == "CelesTrakから取得":
-    spacecraft = st.text_input("衛星名（例: ISS）", "ISS")
-    if st.button("TLEを取得"):
-        try:
-            tle_line1, tle_line2 = get_tle_from_celestrak(spacecraft)
-            st.success(f"TLE取得成功:\n{tle_line1}\n{tle_line2}")
-        except Exception as e:
-            st.error(f"エラーが発生しました: {e}")
-
-# TLEファイルをアップロードを選んだ場合
-elif option == "TLEファイルをアップロード":
-    uploaded_file = st.file_uploader("TLEファイルをアップロードしてください", type="txt")
-    if uploaded_file is not None:
-        try:
-            tle_line1, tle_line2 = get_tle_from_file(uploaded_file)
-            st.success(f"TLEファイル読み込み成功:\n{tle_line1}\n{tle_line2}")
-        except Exception as e:
-            st.error(f"エラーが発生しました: {e}")
-
-# TLEデータを表示する（もし取得できた場合）
-if tle_line1 and tle_line2:
-    st.write("TLEデータ:")
-    st.write(tle_line1)
-    st.write(tle_line2)
 
 # Streamlitアプリケーション
 st.title("Satellite Pass Prediction")

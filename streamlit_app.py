@@ -22,26 +22,31 @@ def get_tle(spacecraft):
 # Streamlitアプリケーション
 st.title("Satellite Pass Prediction")
 
-# Latitude (緯度) と入力欄を同じ行に配置
-col1, col2 = st.columns([1, 3])
-with col1:
-    st.write("Latitude (緯度):")
-with col2:
-    latitude = st.text_input("", "35.9864")
+# カスタムCSSで項目名と入力欄を1行に配置
+st.markdown("""
+    <style>
+    .input-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .input-row label {
+        margin-right: 10px;
+    }
+    .input-row input {
+        flex: 1;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-# Longitude (経度) と入力欄を同じ行に配置
-col3, col4 = st.columns([1, 3])
-with col3:
-    st.write("Longitude (経度):")
-with col4:
-    longitude = st.text_input("", "139.3739")
+# Latitude (緯度) を1行に配置
+st.markdown('<div class="input-row"><label>Latitude (緯度):</label>' + st.text_input("", "35.9864") + '</div>', unsafe_allow_html=True)
 
-# Altitude (高度) と入力欄を同じ行に配置
-col5, col6 = st.columns([1, 3])
-with col5:
-    st.write("Altitude (高度, m):")
-with col6:
-    elevation = st.number_input("", value=0)
+# Longitude (経度) を1行に配置
+st.markdown('<div class="input-row"><label>Longitude (経度):</label>' + st.text_input("", "139.3739") + '</div>', unsafe_allow_html=True)
+
+# Altitude (高度) を1行に配置
+st.markdown('<div class="input-row"><label>Altitude (高度, m):</label>' + str(st.number_input("", value=0)) + '</div>', unsafe_allow_html=True)
 
 # 残りのフォーム（1行で十分なためそのまま）
 start_date = st.date_input("Start Date (開始日)", value=datetime(2024, 11, 20))

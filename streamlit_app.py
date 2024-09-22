@@ -33,7 +33,7 @@ end_date = st.date_input("End Date (終了日)", value=datetime(2025, 1, 20))
 spacecraft = st.text_input("Satellite (衛星名)", "ISS")
 
 # 計算ボタン
-if st.button("Calculate Passes"):
+if st.button("Calculate Passes") or 'pass_data' not in st.session_state:
     # 地上局を設定
     observer = ephem.Observer()
     observer.lat = latitude
@@ -122,16 +122,12 @@ if st.button("Calculate Passes"):
 
     # データをDataFrameに変換して表示
     df = pd.DataFrame(data)
-    st.write(df)
+    st.session_state['pass_data'] = df  # セッションステートに保存
 
-    # CSVファイルをダウンロード可能にする
-    csv = df.to_csv(index=False)
-    st.download_button(
-        label="Download CSV",
-        data=csv,
-        file_name="satellite_pass_data.csv",
-        mime="text/csv",
-    )
+# セッションステートからデータを取得して表示
+if 'pass_data' in st.session_state:
+    df = st.session_state['pass_data']
+    st.write(df)
 
     # パスを選択して方位角-仰角プロットを表示
     selected_pass = st.selectbox("Select a pass to plot", df.index)

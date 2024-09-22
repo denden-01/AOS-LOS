@@ -1,7 +1,6 @@
 import streamlit as st
 import ephem
 import pandas as pd
-import numpy as np
 from datetime import datetime, timedelta, timezone
 import requests
 import matplotlib.pyplot as plt
@@ -21,17 +20,11 @@ def get_tle_from_celestrak(spacecraft):
             return tle_lines[i+1], tle_lines[i+2]
     raise ValueError(f"TLE for {spacecraft} not found.")
 
-# TLEをファイルからアップロードする関数
-def get_tle_from_file(uploaded_file):
-    # アップロードされたファイルを読み込む
-    tle_data = uploaded_file.read().decode("utf-8")
-    tle_lines = tle_data.splitlines()
-
-    # TLEファイルは2行セットなので、1行目と2行目を取得
-    if len(tle_lines) >= 2:
-        return tle_lines[0], tle_lines[1]
-    else:
-        raise ValueError("Invalid TLE file format")
+# 現在の日付を取得
+today = datetime.today()
+# Start Date = 今日, End Date = Start Dateから1ヶ月後
+start_date = today
+end_date = today + timedelta(days=30)
 
 # Streamlitアプリケーション
 st.title("Satellite Pass Prediction")
@@ -80,8 +73,10 @@ if "tle_line1" in st.session_state and "tle_line2" in st.session_state:
     latitude = st.text_input("Latitude (緯度)", "35.9864")
     longitude = st.text_input("Longitude (経度)", "139.3739")
     elevation = st.number_input("Altitude (高度, m)", value=0)
-    start_date = st.date_input("Start Date (開始日)", value=datetime(2024, 11, 20))
-    end_date = st.date_input("End Date (終了日)", value=datetime(2025, 1, 20))
+
+    # Start DateとEnd Dateの入力欄
+    start_date = st.date_input("Start Date (開始日)", value=start_date)
+    end_date = st.date_input("End Date (終了日)", value=end_date)
 
     if st.button("Calculate Passes") or 'pass_data' not in st.session_state:
         observer = ephem.Observer()

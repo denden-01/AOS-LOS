@@ -2,7 +2,7 @@ import streamlit as st
 import ephem
 import pandas as pd
 import numpy as np
-from datetime as datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone  # 修正
 import requests
 import matplotlib.pyplot as plt
 

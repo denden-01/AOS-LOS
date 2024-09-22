@@ -2,7 +2,7 @@ import streamlit as st
 import ephem
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta, timezone
+from datetime as datetime, timedelta, timezone
 import requests
 import matplotlib.pyplot as plt
 
@@ -134,12 +134,19 @@ if 'pass_data' in st.session_state:
     if selected_pass is not None:
         az_el_data = df.iloc[selected_pass]["Az-El Data"]
         azimuths = [x[0] for x in az_el_data]
-        elevations = [x[1] * (180.0 / ephem.pi) for x in az_el_data]  # 仰角を度に変換
+        elevations = [90 - (x[1] * (180.0 / ephem.pi)) for x in az_el_data]  # 仰角を反転して0-90度に変換
 
         # 方位角-仰角プロットを作成
         fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
         ax.plot(azimuths, elevations)
-        ax.set_ylim(0, 90)  # 仰角の範囲を0〜90度に設定
-        ax.set_title(f"Azimuth-Elevation Plot for {spacecraft} Pass")
 
+        # プロットの中心を天頂（90度）、外側を水平線（0度）に設定
+        ax.set_ylim(0, 90)  
+        
+        # 方位角の設定：0度が北（上）、180度が南（下）
+        ax.set_theta_zero_location('N')
+        ax.set_theta_direction(-1)  # 反時計回りに設定
+
+        # タイトルとプロットを表示
+        ax.set_title(f"Azimuth-Elevation Plot for {spacecraft} Pass")
         st.pyplot(fig)

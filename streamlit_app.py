@@ -21,13 +21,26 @@ def get_tle_from_celestrak(spacecraft):
             return tle_lines[i+1], tle_lines[i+2]
     raise ValueError(f"TLE for {spacecraft} not found.")
 
+# TLEをファイルからアップロードする関数
+def get_tle_from_file(uploaded_file):
+    # アップロードされたファイルを読み込む
+    tle_data = uploaded_file.read().decode("utf-8")
+    tle_lines = tle_data.splitlines()
+
+    # TLEファイルは2行セットなので、1行目と2行目を取得
+    if len(tle_lines) >= 2:
+        return tle_lines[0], tle_lines[1]
+    else:
+        raise ValueError("Invalid TLE file format")
+
 # Streamlitアプリケーション
 st.title("Satellite Pass Prediction")
 
-# ユーザーに「CelesTrakからTLEを取得」か「TLEファイルをアップロード」を選択させる
+# 初期状態の設定
 if "tle_source" not in st.session_state:
     st.session_state.tle_source = "CelesTrakから取得"  # 初期状態の設定
 
+# TLE取得方法の選択
 st.session_state.tle_source = st.radio("TLE取得方法を選択してください", 
                                        ("CelesTrakから取得", "TLEファイルをアップロード"),
                                        index=0 if st.session_state.tle_source == "CelesTrakから取得" else 1)
@@ -46,7 +59,19 @@ if st.session_state.tle_source == "CelesTrakから取得":
         except Exception as e:
             st.error(f"エラーが発生しました: {e}")
 
-# TLEが取得済みであれば計算可能
+# TLEファイルをアップロードを選んだ場合
+elif st.session_state.tle_source == "TLEファイルをアップロード":
+    uploaded_file = st.file_uploader("TLEファイルをアップロードしてください", type="txt")
+    if uploaded_file is not None:
+        try:
+            tle_line1, tle_line2 = get_tle_from_file(uploaded_file)
+            st.session_state.tle_line1 = tle_line1
+            st.session_state.tle_line2 = tle_line2
+            st.success(f"TLEファイル読み込み成功:\n{tle_line1}\n{tle_line2}")
+        except Exception as e:
+            st.error(f"エラーが発生しました: {e}")
+
+# もしTLEデータが取得できた場合に表示
 if "tle_line1" in st.session_state and "tle_line2" in st.session_state:
     tle_line1 = st.session_state.tle_line1
     tle_line2 = st.session_state.tle_line2

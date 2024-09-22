@@ -5,21 +5,34 @@ import numpy as np
 from datetime import datetime, timedelta, timezone  # 修正済み
 import requests
 import matplotlib.pyplot as plt
+import requests
 
 # JSTへのタイムゾーン設定
 JST = timezone(timedelta(hours=9))
 
 # TLEデータをNASAのサイトから取得
 def get_tle(spacecraft):
-    url = "https://celestrak.org/NORAD/elements/stations.txt"
+    # ISS用の専用TLE URL
+    if spacecraft.lower() == "iss" or spacecraft.lower() == "iss (zarya)":
+        url = "https://celestrak.org/NORAD/elements/gp.php?CATNR=25544"
+    else:
+        url = "https://celestrak.org/NORAD/elements/stations.txt"
+    
     response = requests.get(url)
     tle_lines = response.text.splitlines()
     
-    # スペースクラフト名に部分一致するTLEを取得
+    # ISSの場合は専用のTLEを使用するので、最初の2行を返す
+    if spacecraft.lower() == "iss" or spacecraft.lower() == "iss (zarya)":
+        return tle_lines[1], tle_lines[2]
+    
+    # 他の衛星の場合は、通常の方法で検索
     for i in range(0, len(tle_lines), 3):
         if spacecraft.lower() in tle_lines[i].lower():
             return tle_lines[i+1], tle_lines[i+2]
+    
+    # スペースクラフト名が見つからない場合にエラーを返す
     raise ValueError(f"TLE for {spacecraft} not found.")
+
 
 # Streamlitアプリケーション
 st.title("Satellite Pass Prediction")

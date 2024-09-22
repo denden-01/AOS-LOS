@@ -10,14 +10,14 @@ import matplotlib.pyplot as plt
 JST = timezone(timedelta(hours=9))
 
 # TLEデータをNASAのサイトから取得
-def get_tle(spacecraft):
+ef get_tle(spacecraft):
     url = "https://celestrak.org/NORAD/elements/stations.txt"
     response = requests.get(url)
     tle_lines = response.text.splitlines()
     
-    # スペースクラフト名を正確に探す
+    # スペースクラフト名に部分一致するTLEを取得
     for i in range(0, len(tle_lines), 3):
-        if spacecraft.lower() in tle_lines[i].lower() or 'zarya' in tle_lines[i].lower():
+        if spacecraft.lower() in tle_lines[i].lower():
             return tle_lines[i+1], tle_lines[i+2]
     raise ValueError(f"TLE for {spacecraft} not found.")
 

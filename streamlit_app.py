@@ -21,18 +21,6 @@ def get_tle_from_celestrak(spacecraft):
             return tle_lines[i+1], tle_lines[i+2]
     raise ValueError(f"TLE for {spacecraft} not found.")
 
-# TLEをファイルからアップロードする関数
-def get_tle_from_file(uploaded_file):
-    # アップロードされたファイルを読み込む
-    tle_data = uploaded_file.read().decode("utf-8")
-    tle_lines = tle_data.splitlines()
-
-    # TLEファイルは2行セットなので、1行目と2行目を取得
-    if len(tle_lines) >= 2:
-        return tle_lines[0], tle_lines[1]
-    else:
-        raise ValueError("Invalid TLE file format")
-
 # Streamlitアプリケーション
 st.title("Satellite Pass Prediction")
 
@@ -40,7 +28,6 @@ st.title("Satellite Pass Prediction")
 if "tle_source" not in st.session_state:
     st.session_state.tle_source = "CelesTrakから取得"  # 初期状態の設定
 
-# 選択したオプションに基づいてUIを表示
 st.session_state.tle_source = st.radio("TLE取得方法を選択してください", 
                                        ("CelesTrakから取得", "TLEファイルをアップロード"),
                                        index=0 if st.session_state.tle_source == "CelesTrakから取得" else 1)
@@ -56,18 +43,6 @@ if st.session_state.tle_source == "CelesTrakから取得":
             st.session_state.tle_line1 = tle_line1
             st.session_state.tle_line2 = tle_line2
             st.success(f"TLE取得成功:\n{tle_line1}\n{tle_line2}")
-        except Exception as e:
-            st.error(f"エラーが発生しました: {e}")
-
-# TLEファイルをアップロードを選んだ場合
-elif st.session_state.tle_source == "TLEファイルをアップロード":
-    uploaded_file = st.file_uploader("TLEファイルをアップロードしてください", type="txt")
-    if uploaded_file is not None:
-        try:
-            tle_line1, tle_line2 = get_tle_from_file(uploaded_file)
-            st.session_state.tle_line1 = tle_line1
-            st.session_state.tle_line2 = tle_line2
-            st.success(f"TLEファイル読み込み成功:\n{tle_line1}\n{tle_line2}")
         except Exception as e:
             st.error(f"エラーが発生しました: {e}")
 
@@ -153,7 +128,7 @@ if "tle_line1" in st.session_state and "tle_line2" in st.session_state:
                         "MEL": max_elevation * (180.0 / ephem.pi),  # 最大仰角を度に変換
                         "T-MEL(JST)": max_elevation_time.astimezone(JST).strftime('%H:%M:%S') if max_elevation_time else None,
                         "VTIME(s)": visible_time,
-                        "SAT": "Satellite",
+                        "SAT": spacecraft,
                         "Az-El Data": azimuth_elevation_data  # 方位角-仰角データ
                     })
 
@@ -178,14 +153,14 @@ if 'pass_data' in st.session_state:
     if selected_pass is not None:
         az_el_data = df.iloc[selected_pass]["Az-El Data"]
         azimuths = [x[0] for x in az_el_data]
-        elevations = [90 - (x[1] * (180.0 / ephem.pi)) for x in az_el_data]  # 仰角を反転して0-90度に変換
+        elevations = [(x[1] * (180.0 / ephem.pi)) for x in az_el_data]  # 仰角を0-90度に変換
 
         # 方位角-仰角プロットを作成
         fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
         ax.plot(azimuths, elevations)
 
-        # 仰角のスケールを逆に設定（天頂が90度、地平線が0度）
-        ax.set_ylim(90, 0)
+        # 仰角のスケールを適切に設定
+        ax.set_ylim(90, 0)  # 天頂が90度、地平線が0度
         
         # 方位角の設定：0度が北（上）、180度が南（下）
         ax.set_theta_zero_location('N')

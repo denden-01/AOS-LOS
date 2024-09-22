@@ -37,32 +37,45 @@ def get_tle_from_file(uploaded_file):
 st.title("Satellite Pass Prediction")
 
 # ユーザーに「CelesTrakからTLEを取得」か「TLEファイルをアップロード」を選択させる
-option = st.radio("TLE取得方法を選択してください", ("CelesTrakから取得", "TLEファイルをアップロード"))
+if "tle_source" not in st.session_state:
+    st.session_state.tle_source = "CelesTrakから取得"  # 初期状態の設定
+
+# 選択したオプションに基づいてUIを表示
+st.session_state.tle_source = st.radio("TLE取得方法を選択してください", 
+                                       ("CelesTrakから取得", "TLEファイルをアップロード"),
+                                       index=0 if st.session_state.tle_source == "CelesTrakから取得" else 1)
 
 tle_line1, tle_line2 = None, None  # TLEデータの初期化
 
 # CelesTrakから取得を選んだ場合
-if option == "CelesTrakから取得":
+if st.session_state.tle_source == "CelesTrakから取得":
     spacecraft = st.text_input("衛星名（例: ISS）", "ISS")
     if st.button("TLEを取得"):
         try:
             tle_line1, tle_line2 = get_tle_from_celestrak(spacecraft)
+            st.session_state.tle_line1 = tle_line1
+            st.session_state.tle_line2 = tle_line2
             st.success(f"TLE取得成功:\n{tle_line1}\n{tle_line2}")
         except Exception as e:
             st.error(f"エラーが発生しました: {e}")
 
 # TLEファイルをアップロードを選んだ場合
-elif option == "TLEファイルをアップロード":
+elif st.session_state.tle_source == "TLEファイルをアップロード":
     uploaded_file = st.file_uploader("TLEファイルをアップロードしてください", type="txt")
     if uploaded_file is not None:
         try:
             tle_line1, tle_line2 = get_tle_from_file(uploaded_file)
+            st.session_state.tle_line1 = tle_line1
+            st.session_state.tle_line2 = tle_line2
             st.success(f"TLEファイル読み込み成功:\n{tle_line1}\n{tle_line2}")
         except Exception as e:
             st.error(f"エラーが発生しました: {e}")
 
-# もしTLEデータが取得できた場合に表示
-if tle_line1 and tle_line2:
+# TLEが取得済みであれば計算可能
+if "tle_line1" in st.session_state and "tle_line2" in st.session_state:
+    tle_line1 = st.session_state.tle_line1
+    tle_line2 = st.session_state.tle_line2
+
     # 地上局を設定
     latitude = st.text_input("Latitude (緯度)", "35.9864")
     longitude = st.text_input("Longitude (経度)", "139.3739")
@@ -140,7 +153,7 @@ if tle_line1 and tle_line2:
                         "MEL": max_elevation * (180.0 / ephem.pi),  # 最大仰角を度に変換
                         "T-MEL(JST)": max_elevation_time.astimezone(JST).strftime('%H:%M:%S') if max_elevation_time else None,
                         "VTIME(s)": visible_time,
-                        "SAT": spacecraft,
+                        "SAT": "Satellite",
                         "Az-El Data": azimuth_elevation_data  # 方位角-仰角データ
                     })
 
@@ -179,5 +192,5 @@ if 'pass_data' in st.session_state:
         ax.set_theta_direction(-1)  # 反時計回りに設定
 
         # タイトルとプロットを表示
-        ax.set_title(f"Azimuth-Elevation Plot for {spacecraft} Pass")
+        ax.set_title(f"Azimuth-Elevation Plot for Satellite Pass")
         st.pyplot(fig)

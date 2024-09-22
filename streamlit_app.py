@@ -180,8 +180,10 @@ if "tle_line1" in st.session_state and "tle_line2" in st.session_state:
                         if observer.date.datetime().date() != aos_list[0].date():
                             break
                     
-                    # 翌日に進む
+                    # ** current_timeの更新。翌日に進む。end_dateを超えたら終了。**
                     current_time = datetime.combine(current_time.date() + timedelta(days=1), datetime.min.time())
+                    if current_time > end_datetime:
+                        break  # 終了日を超えたらループを終了
 
                 # データをDataFrameに変換して表示
                 df = pd.DataFrame(data)

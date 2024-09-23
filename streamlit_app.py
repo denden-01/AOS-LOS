@@ -43,7 +43,7 @@ default_end_date = today + timedelta(days=30)
 # Streamlitアプリケーション
 st.title("Satellite Pass Prediction")
 
-# 上段（TLE取得、地上局と日付入力、pass計算）
+# 上段（TLE取得、地上局設定、日付設定）
 upper_col1, upper_col2, upper_col3 = st.columns([1, 1, 1])
 
 # 下段（Pass結果とAz-Elプロット）
@@ -86,14 +86,16 @@ with upper_col1:
             except Exception as e:
                 st.error(f"エラーが発生しました: {e}")
 
-# 中央上段：地上局や日付入力セクション
+# 中央上段：地上局の設定セクション
 with upper_col2:
-    st.subheader("地上局と日付の設定")
+    st.subheader("地上局の設定")
     latitude = st.text_input("Latitude (緯度)", "35.9864")
     longitude = st.text_input("Longitude (経度)", "139.3739")
     elevation = st.number_input("Altitude (高度, m)", value=0)
 
-    # Start DateとEnd Dateの入力欄 (初期値は今日とその1ヶ月後)
+# 右上段：日付の設定セクション
+with upper_col3:
+    st.subheader("日付の設定")
     start_date = st.date_input("Start Date (開始日)", value=st.session_state.get('start_date', default_start_date))
     end_date = st.date_input("End Date (終了日)", value=st.session_state.get('end_date', default_end_date))
 
@@ -101,9 +103,7 @@ with upper_col2:
     st.session_state['start_date'] = start_date
     st.session_state['end_date'] = end_date
 
-# 右上段：pass計算入力セクション
-with upper_col3:
-    st.subheader("Pass計算")
+    # Pass計算ボタン
     if st.button("Calculate Passes"):
         # 衛星TLEデータが存在しない場合のエラーチェック
         if "tle_name" not in st.session_state or "tle_line1" not in st.session_state or "tle_line2" not in st.session_state:

@@ -118,7 +118,8 @@ if "tle_name" in st.session_state and "tle_line1" in st.session_state and "tle_l
 
                 # 開始日と終了日を設定
                 start_datetime = datetime.combine(start_date, datetime.min.time())
-                end_datetime = datetime.combine(end_date, datetime.min.time())
+                # 終了日を含むように、end_datetimeをその日の終わりに設定
+                end_datetime = datetime.combine(end_date, datetime.max.time())
 
                 # AOS、LOS、最大仰角、方位角-仰角データのリストを初期化
                 data = []

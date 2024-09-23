@@ -47,52 +47,53 @@ st.title("Satellite Pass Prediction")
 if "tle_source" not in st.session_state:
     st.session_state.tle_source = "CelesTrakから取得"  # 初期状態の設定
 
-# TLE取得方法の選択
-st.session_state.tle_source = st.radio("TLE取得方法を選択してください", 
-                                       ("CelesTrakから取得", "TLEファイルをアップロード"),
-                                       index=0 if st.session_state.tle_source == "CelesTrakから取得" else 1)
+# 画面4分割レイアウト
+# 上段（TLE取得と地上局・計算日付）
+upper_col1, upper_col2 = st.columns([1, 1])
 
-# TLEデータの初期化
-tle_name, tle_line1, tle_line2 = None, None, None
+# 下段（Pass結果とAz-Elプロット）
+lower_col1, lower_col2 = st.columns([1, 1])
 
-# CelesTrakから取得を選んだ場合
-if st.session_state.tle_source == "CelesTrakから取得":
-    spacecraft = st.text_input("衛星名（例: ISS）", "ISS")
-    if st.button("TLEを取得"):
-        try:
-            tle_line1, tle_line2 = get_tle_from_celestrak(spacecraft)
-            tle_name = spacecraft  # TLEの名前をセット
-            st.session_state.tle_name = tle_name
-            st.session_state.tle_line1 = tle_line1
-            st.session_state.tle_line2 = tle_line2
-            st.success(f"TLE取得成功:\n{tle_line1}\n{tle_line2}")
-        except Exception as e:
-            st.error(f"エラーが発生しました: {e}")
+# 左上段：TLE取得に関する枠
+with upper_col1:
+    with st.expander("TLEデータ取得"):
+        st.session_state.tle_source = st.radio("TLE取得方法を選択してください", 
+                                               ("CelesTrakから取得", "TLEファイルをアップロード"),
+                                               index=0 if st.session_state.tle_source == "CelesTrakから取得" else 1)
 
-# TLEファイルをアップロードを選んだ場合
-elif st.session_state.tle_source == "TLEファイルをアップロード":
-    uploaded_file = st.file_uploader("TLEファイルをアップロードしてください", type="txt")
-    if uploaded_file is not None:
-        try:
-            tle_name, tle_line1, tle_line2 = get_tle_from_file(uploaded_file)
-            st.session_state.tle_name = tle_name
-            st.session_state.tle_line1 = tle_line1
-            st.session_state.tle_line2 = tle_line2
-            st.success(f"TLEファイル読み込み成功:\n{tle_name}\n{tle_line1}\n{tle_line2}")
-        except Exception as e:
-            st.error(f"エラーが発生しました: {e}")
+        # TLEデータの初期化
+        tle_name, tle_line1, tle_line2 = None, None, None
 
-# セッションステートでTLEデータが正しくセットされているか確認
-if "tle_name" in st.session_state and "tle_line1" in st.session_state and "tle_line2" in st.session_state:
-    tle_name = st.session_state.tle_name
-    tle_line1 = st.session_state.tle_line1
-    tle_line2 = st.session_state.tle_line2
+        # CelesTrakから取得を選んだ場合
+        if st.session_state.tle_source == "CelesTrakから取得":
+            spacecraft = st.text_input("衛星名（例: ISS）", "ISS")
+            if st.button("TLEを取得"):
+                try:
+                    tle_line1, tle_line2 = get_tle_from_celestrak(spacecraft)
+                    tle_name = spacecraft  # TLEの名前をセット
+                    st.session_state.tle_name = tle_name
+                    st.session_state.tle_line1 = tle_line1
+                    st.session_state.tle_line2 = tle_line2
+                    st.success(f"TLE取得成功:\n{tle_line1}\n{tle_line2}")
+                except Exception as e:
+                    st.error(f"エラーが発生しました: {e}")
 
-    # TLEデータが空でないか確認
-    if tle_name is None or tle_line1 is None or tle_line2 is None:
-        st.error("TLEデータが無効です。再度取得またはアップロードしてください。")
-    else:
-        # 地上局を設定
+        # TLEファイルをアップロードを選んだ場合
+        elif st.session_state.tle_source == "TLEファイルをアップロード":
+            uploaded_file = st.file_uploader("TLEファイルをアップロードしてください", type="txt")
+            if uploaded_file is not None:
+                try:
+                    tle_name, tle_line1, tle_line2 = get_tle_from_file(uploaded_file)
+                    st.session_state.tle_name = tle_name
+                    st.session_state.tle_line1 = tle_line1
+                    st.session_state.tle_line2 = tle_line2
+                    st.success(f"TLEファイル読み込み成功:\n{tle_name}\n{tle_line1}\n{tle_line2}")
+                except Exception as e:
+                    st.error(f"エラーが発生しました: {e}")
+
+# 右上段：地上局や計算日付入力の枠
+with upper_col2:
+    with st.expander("地上局と日付の設定"):
         latitude = st.text_input("Latitude (緯度)", "35.9864")
         longitude = st.text_input("Longitude (経度)", "139.3739")
         elevation = st.number_input("Altitude (高度, m)", value=0)
@@ -105,7 +106,6 @@ if "tle_name" in st.session_state and "tle_line1" in st.session_state and "tle_l
         st.session_state['start_date'] = start_date
         st.session_state['end_date'] = end_date
 
-        # 計算ボタンが押された場合のみ計算を実行
         if st.button("Calculate Passes"):
             observer = ephem.Observer()
             observer.lat = latitude
@@ -170,21 +170,17 @@ if "tle_name" in st.session_state and "tle_line1" in st.session_state and "tle_l
             except Exception as e:
                 st.error(f"エラーが発生しました: {e}")
 
-# セッションステートからデータを取得して表示
-if 'pass_data' in st.session_state:
-    df = st.session_state['pass_data']
-    
-    # 列レイアウトで画面を分ける
-    col1, col2 = st.columns([1, 1])  # 列の幅を1:1に設定
+# 左下段：passの計算結果の表の枠
+with lower_col1:
+    if 'pass_data' in st.session_state:
+        st.write(st.session_state['pass_data'])
 
-    with col1:
-        st.write(df)
-
-    with col2:
-        # パスを選択して方位角-仰角プロットを表示
-        selected_pass = st.selectbox("Select a pass to plot", df.index)
+# 右下段：Az-Elプロットの枠
+with lower_col2:
+    if 'pass_data' in st.session_state:
+        selected_pass = st.selectbox("Select a pass to plot", st.session_state['pass_data'].index)
         if selected_pass is not None:
-            az_el_data = df.iloc[selected_pass]["Az-El Data"]
+            az_el_data = st.session_state['pass_data'].iloc[selected_pass]["Az-El Data"]
             azimuths = [x[0] for x in az_el_data]
             elevations = [(x[1] * (180.0 / ephem.pi)) for x in az_el_data]  # 仰角を0-90度に変換
 

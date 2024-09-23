@@ -8,31 +8,17 @@ import matplotlib.pyplot as plt
 # JSTへのタイムゾーン設定
 JST = timezone(timedelta(hours=9))
 
-# カスタムCSSで幅を1.5倍に調整
-st.markdown(
-    """
-    <style>
-    .main .block-container {
-        max-width: 1500px;
-        padding-left: 5rem;
-        padding-right: 5rem;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-# TLEデータをCelesTrakから取得する関数
-def get_tle_from_celestrak(spacecraft):
-    url = "https://celestrak.org/NORAD/elements/stations.txt"
+# TLEデータをCelesTrakから取得する関数（アクティブな衛星）
+def get_tle_from_active_satellites(spacecraft):
+    url = "https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle"
     response = requests.get(url)
     tle_lines = response.text.splitlines()
-    
+
     # スペースクラフト名に部分一致するTLEを取得
     for i in range(0, len(tle_lines), 3):
         if spacecraft.lower() in tle_lines[i].lower():
             return tle_lines[i+1], tle_lines[i+2]
-    raise ValueError(f"TLE for {spacecraft} not found.")
+    raise ValueError(f"TLE for {spacecraft} not found in active satellites.")
 
 # TLEファイルをアップロードする関数
 def get_tle_from_file(uploaded_file):
@@ -82,7 +68,7 @@ with upper_col1:
         spacecraft = st.text_input("衛星名（例: ISS）", "ISS")
         if st.button("TLEを取得"):
             try:
-                tle_line1, tle_line2 = get_tle_from_celestrak(spacecraft)
+                tle_line1, tle_line2 = get_tle_from_active_satellites(spacecraft)
                 tle_name = spacecraft  # TLEの名前をセット
                 st.session_state.tle_name = tle_name
                 st.session_state.tle_line1 = tle_line1

@@ -120,7 +120,7 @@ if "tle_name" in st.session_state and "tle_line1" in st.session_state and "tle_l
                 start_datetime = datetime.combine(start_date, datetime.min.time())
                 end_datetime = datetime.combine(end_date, datetime.min.time())
 
-                # AOS、LOS、最大仰角のリストを初期化
+                # AOS、LOS、最大仰角、方位角-仰角データのリストを初期化
                 data = []
                 current_time = start_datetime
 
@@ -134,6 +134,14 @@ if "tle_name" in st.session_state and "tle_line1" in st.session_state and "tle_l
                     los_time = ephem.localtime(next_pass[4])
                     max_elevation = next_pass[3] * (180.0 / ephem.pi)  # 最大仰角を度に変換
 
+                    # 方位角-仰角データを収集
+                    az_el_data = []
+                    observer.date = next_pass[0]  # AOS時刻を設定
+                    while observer.date < next_pass[4]:  # LOSまで方位角と仰角を取得
+                        satellite.compute(observer)
+                        az_el_data.append((satellite.az, satellite.alt))
+                        observer.date += ephem.minute  # 1分ごとに計算
+
                     # パスが期間内にあるか確認
                     if aos_time > end_datetime:
                         break  # 計算を終了
@@ -146,7 +154,8 @@ if "tle_name" in st.session_state and "tle_line1" in st.session_state and "tle_l
                         "MEL": max_elevation,
                         "T-MEL(JST)": ephem.localtime(next_pass[3]).astimezone(JST).strftime('%H:%M:%S'),
                         "VTIME(s)": (los_time - aos_time).total_seconds(),
-                        "SAT": tle_name
+                        "SAT": tle_name,
+                        "Az-El Data": az_el_data  # 方位角-仰角データ
                     })
 
                     # current_timeを次のLOSの後に設定して次のパスを探す

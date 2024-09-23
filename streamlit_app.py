@@ -107,68 +107,72 @@ with upper_col2:
         st.session_state['end_date'] = end_date
 
         if st.button("Calculate Passes"):
-            observer = ephem.Observer()
-            observer.lat = latitude
-            observer.lon = longitude
-            observer.elevation = elevation
-            observer.date = ephem.Date(start_date)  # Start Dateを設定
+            # 衛星TLEデータが存在しない場合のエラーチェック
+            if "tle_name" not in st.session_state or "tle_line1" not in st.session_state or "tle_line2" not in st.session_state:
+                st.error("TLEデータが設定されていません。TLEデータを取得またはアップロードしてください。")
+            else:
+                observer = ephem.Observer()
+                observer.lat = latitude
+                observer.lon = longitude
+                observer.elevation = elevation
+                observer.date = ephem.Date(start_date)  # Start Dateを設定
 
-            try:
-                # 衛星データを設定
-                satellite = ephem.readtle(tle_name, tle_line1, tle_line2)
+                try:
+                    # 衛星データを設定
+                    satellite = ephem.readtle(st.session_state.tle_name, st.session_state.tle_line1, st.session_state.tle_line2)
 
-                # 開始日と終了日を設定
-                start_datetime = datetime.combine(start_date, datetime.min.time())  # 開始日を含む
-                end_datetime = datetime.combine(end_date, datetime.max.time())  # 終了日を含む
+                    # 開始日と終了日を設定
+                    start_datetime = datetime.combine(start_date, datetime.min.time())  # 開始日を含む
+                    end_datetime = datetime.combine(end_date, datetime.max.time())  # 終了日を含む
 
-                # AOS、LOS、最大仰角、方位角-仰角データのリストを初期化
-                data = []
-                current_time = start_datetime
+                    # AOS、LOS、最大仰角、方位角-仰角データのリストを初期化
+                    data = []
+                    current_time = start_datetime
 
-                # 指定された期間で衛星のパスを計算
-                while current_time <= end_datetime:
-                    # 次のパスを探す
-                    next_pass = observer.next_pass(satellite)
+                    # 指定された期間で衛星のパスを計算
+                    while current_time <= end_datetime:
+                        # 次のパスを探す
+                        next_pass = observer.next_pass(satellite)
 
-                    # AOS, LOS, 最大仰角などの情報を取得
-                    aos_time = ephem.localtime(next_pass[0])
-                    los_time = ephem.localtime(next_pass[4])
-                    max_elevation = next_pass[3] * (180.0 / ephem.pi)  # 最大仰角を度に変換
+                        # AOS, LOS, 最大仰角などの情報を取得
+                        aos_time = ephem.localtime(next_pass[0])
+                        los_time = ephem.localtime(next_pass[4])
+                        max_elevation = next_pass[3] * (180.0 / ephem.pi)  # 最大仰角を度に変換
 
-                    # 方位角-仰角データを収集
-                    az_el_data = []
-                    observer.date = next_pass[0]  # AOS時刻を設定
-                    while observer.date < next_pass[4]:  # LOSまで方位角と仰角を取得
-                        satellite.compute(observer)
-                        az_el_data.append((satellite.az, satellite.alt))
-                        observer.date += ephem.minute  # 1分ごとに計算
+                        # 方位角-仰角データを収集
+                        az_el_data = []
+                        observer.date = next_pass[0]  # AOS時刻を設定
+                        while observer.date < next_pass[4]:  # LOSまで方位角と仰角を取得
+                            satellite.compute(observer)
+                            az_el_data.append((satellite.az, satellite.alt))
+                            observer.date += ephem.minute  # 1分ごとに計算
 
-                    # パスが期間内にあるか確認
-                    if aos_time > end_datetime:
-                        break  # 計算を終了
+                        # パスが期間内にあるか確認
+                        if aos_time > end_datetime:
+                            break  # 計算を終了
 
-                    # パス情報をリストに追加
-                    data.append({
-                        "Day": aos_time.strftime('%Y-%m-%d'),
-                        "AOS(JST)": aos_time.astimezone(JST).strftime('%H:%M:%S'),
-                        "LOS(JST)": los_time.astimezone(JST).strftime('%H:%M:%S'),
-                        "MEL": max_elevation,
-                        "T-MEL(JST)": ephem.localtime(next_pass[3]).astimezone(JST).strftime('%H:%M:%S'),
-                        "VTIME(s)": (los_time - aos_time).total_seconds(),
-                        "SAT": tle_name,
-                        "Az-El Data": az_el_data  # 方位角-仰角データ
-                    })
+                        # パス情報をリストに追加
+                        data.append({
+                            "Day": aos_time.strftime('%Y-%m-%d'),
+                            "AOS(JST)": aos_time.astimezone(JST).strftime('%H:%M:%S'),
+                            "LOS(JST)": los_time.astimezone(JST).strftime('%H:%M:%S'),
+                            "MEL": max_elevation,
+                            "T-MEL(JST)": ephem.localtime(next_pass[3]).astimezone(JST).strftime('%H:%M:%S'),
+                            "VTIME(s)": (los_time - aos_time).total_seconds(),
+                            "SAT": st.session_state.tle_name,
+                            "Az-El Data": az_el_data  # 方位角-仰角データ
+                        })
 
-                    # current_timeを次のLOSの後に設定して次のパスを探す
-                    current_time = los_time + timedelta(seconds=10)
-                    observer.date = current_time
+                        # current_timeを次のLOSの後に設定して次のパスを探す
+                        current_time = los_time + timedelta(seconds=10)
+                        observer.date = current_time
 
-                # データをDataFrameに変換して表示
-                df = pd.DataFrame(data)
-                st.session_state['pass_data'] = df  # セッションステートに保存
+                    # データをDataFrameに変換して表示
+                    df = pd.DataFrame(data)
+                    st.session_state['pass_data'] = df  # セッションステートに保存
 
-            except Exception as e:
-                st.error(f"エラーが発生しました: {e}")
+                except Exception as e:
+                    st.error(f"エラーが発生しました: {e}")
 
 # 左下段：passの計算結果の表の枠
 with lower_col1:

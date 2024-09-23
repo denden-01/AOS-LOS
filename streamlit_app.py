@@ -8,6 +8,20 @@ import matplotlib.pyplot as plt
 # JSTへのタイムゾーン設定
 JST = timezone(timedelta(hours=9))
 
+# カスタムCSSで幅を1.5倍に調整
+st.markdown(
+    """
+    <style>
+    .main .block-container {
+        max-width: 1500px;
+        padding-left: 5rem;
+        padding-right: 5rem;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # TLEデータをCelesTrakから取得する関数（アクティブな衛星）
 def get_tle_from_active_satellites(spacecraft):
     url = "https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle"

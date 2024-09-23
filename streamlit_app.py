@@ -40,6 +40,10 @@ today = datetime.today()
 default_start_date = today
 default_end_date = today + timedelta(days=30)
 
+# 初期状態の設定
+if 'tle_source' not in st.session_state:
+    st.session_state.tle_source = "CelesTrakから取得"  # 初期値の設定
+
 # Streamlitアプリケーション
 st.title("Satellite Pass Prediction")
 

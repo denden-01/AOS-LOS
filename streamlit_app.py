@@ -125,8 +125,8 @@ if "tle_line1" in st.session_state and "tle_line2" in st.session_state:
                     next_pass = observer.next_pass(satellite)
 
                     # AOS, LOS, 最大仰角などの情報を取得
-                    aos_time = ephem.localtime(next_pass[0])
-                    los_time = ephem.localtime(next_pass[4])
+                    aos_time = next_pass[0].datetime()
+                    los_time = next_pass[4].datetime()
                     max_elevation = next_pass[3] * (180.0 / ephem.pi)  # 最大仰角を度に変換
 
                     # パスが期間内にあるか確認
@@ -139,7 +139,7 @@ if "tle_line1" in st.session_state and "tle_line2" in st.session_state:
                         "AOS(JST)": aos_time.astimezone(JST).strftime('%H:%M:%S'),
                         "LOS(JST)": los_time.astimezone(JST).strftime('%H:%M:%S'),
                         "MEL": max_elevation,
-                        "T-MEL(JST)": ephem.localtime(next_pass[3]).astimezone(JST).strftime('%H:%M:%S'),
+                        "T-MEL(JST)": next_pass[3].datetime().astimezone(JST).strftime('%H:%M:%S'),
                         "VTIME(s)": (los_time - aos_time).total_seconds(),
                         "SAT": tle_name
                     })

@@ -111,6 +111,7 @@ if "tle_name" in st.session_state and "tle_line1" in st.session_state and "tle_l
             observer.lat = latitude
             observer.lon = longitude
             observer.elevation = elevation
+            observer.date = ephem.Date(start_date)  # Start Dateを設定
 
             try:
                 # 衛星データを設定

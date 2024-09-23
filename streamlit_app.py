@@ -8,16 +8,17 @@ import matplotlib.pyplot as plt
 # JSTへのタイムゾーン設定
 JST = timezone(timedelta(hours=9))
 
-# CelesTrakからTLEデータを取得する関数
-def get_tle_from_celestrak(category_url, identifier):
-    response = requests.get(category_url)
+# TLEデータをCelesTrakから取得する関数
+def get_tle_from_celestrak(spacecraft):
+    url = "https://celestrak.org/NORAD/elements/stations.txt"
+    response = requests.get(url)
     tle_lines = response.text.splitlines()
     
-    # 衛星名またはNORAD IDに部分一致するTLEを取得
+    # スペースクラフト名に部分一致するTLEを取得
     for i in range(0, len(tle_lines), 3):
-        if identifier.lower() in tle_lines[i].lower() or identifier in tle_lines[i+1]:
-            return tle_lines[i], tle_lines[i+1], tle_lines[i+2]
-    raise ValueError(f"TLE for {identifier} not found.")
+        if spacecraft.lower() in tle_lines[i].lower():
+            return tle_lines[i+1], tle_lines[i+2]
+    raise ValueError(f"TLE for {spacecraft} not found.")
 
 # TLEファイルをアップロードする関数
 def get_tle_from_file(uploaded_file):
@@ -32,15 +33,6 @@ def get_tle_from_file(uploaded_file):
         return satellite_name, line1, line2
     else:
         raise ValueError("Invalid TLE file format. The file must contain at least 3 lines (satellite name, line 1, and line 2).")
-
-# CelesTrakのTLEカテゴリURLのリスト（必要に応じてカテゴリを追加）
-TLE_CATEGORIES = {
-    "Stations": "https://celestrak.org/NORAD/elements/stations.txt",
-    "Weather": "https://celestrak.org/NORAD/elements/weather.txt",
-    "Communications": "https://celestrak.org/NORAD/elements/comm.txt",
-    "GPS": "https://celestrak.org/NORAD/elements/gps-ops.txt",
-    "Science": "https://celestrak.org/NORAD/elements/science.txt"
-}
 
 # 現在の日付を取得
 today = datetime.today()
@@ -65,17 +57,15 @@ tle_name, tle_line1, tle_line2 = None, None, None
 
 # CelesTrakから取得を選んだ場合
 if st.session_state.tle_source == "CelesTrakから取得":
-    identifier = st.text_input("衛星名または物体番号（例: ISS または 25544）", "ISS")
-    tle_category = st.selectbox("TLEカテゴリを選択", list(TLE_CATEGORIES.keys()))  # カテゴリ選択
-    category_url = TLE_CATEGORIES[tle_category]
-    
+    spacecraft = st.text_input("衛星名（例: ISS）", "ISS")
     if st.button("TLEを取得"):
         try:
-            tle_name, tle_line1, tle_line2 = get_tle_from_celestrak(category_url, identifier)
+            tle_line1, tle_line2 = get_tle_from_celestrak(spacecraft)
+            tle_name = spacecraft  # TLEの名前をセット
             st.session_state.tle_name = tle_name
             st.session_state.tle_line1 = tle_line1
             st.session_state.tle_line2 = tle_line2
-            st.success(f"TLE取得成功:\n{tle_name}\n{tle_line1}\n{tle_line2}")
+            st.success(f"TLE取得成功:\n{tle_line1}\n{tle_line2}")
         except Exception as e:
             st.error(f"エラーが発生しました: {e}")
 
@@ -183,26 +173,32 @@ if "tle_name" in st.session_state and "tle_line1" in st.session_state and "tle_l
 # セッションステートからデータを取得して表示
 if 'pass_data' in st.session_state:
     df = st.session_state['pass_data']
-    st.write(df)
+    
+    # 列レイアウトで画面を分ける
+    col1, col2 = st.columns([1, 1])  # 列の幅を1:1に設定
 
-    # パスを選択して方位角-仰角プロットを表示
-    selected_pass = st.selectbox("Select a pass to plot", df.index)
-    if selected_pass is not None:
-        az_el_data = df.iloc[selected_pass]["Az-El Data"]
-        azimuths = [x[0] for x in az_el_data]
-        elevations = [(x[1] * (180.0 / ephem.pi)) for x in az_el_data]  # 仰角を0-90度に変換
+    with col1:
+        st.write(df)
 
-        # 方位角-仰角プロットを作成
-        fig, ax = plt.subplots(subplot_kw={'projection': 'polar'})
-        ax.plot(azimuths, elevations)
+    with col2:
+        # パスを選択して方位角-仰角プロットを表示
+        selected_pass = st.selectbox("Select a pass to plot", df.index)
+        if selected_pass is not None:
+            az_el_data = df.iloc[selected_pass]["Az-El Data"]
+            azimuths = [x[0] for x in az_el_data]
+            elevations = [(x[1] * (180.0 / ephem.pi)) for x in az_el_data]  # 仰角を0-90度に変換
 
-        # 仰角のスケールを適切に設定
-        ax.set_ylim(90, 0)  # 天頂が90度、地平線が0度
-        
-        # 方位角の設定：0度が北（上）、180度が南（下）
-        ax.set_theta_zero_location('N')
-        ax.set_theta_direction(-1)  # 反時計回りに設定
+            # 方位角-仰角プロットを作成
+            fig, ax = plt.subplots(subplot_kw={'projection': 'polar'}, figsize=(6,6))  # グラフの大きさを調整
+            ax.plot(azimuths, elevations)
 
-        # タイトルとプロットを表示
-        ax.set_title(f"Azimuth-Elevation Plot for Satellite Pass")
-        st.pyplot(fig)
+            # 仰角のスケールを適切に設定
+            ax.set_ylim(90, 0)  # 天頂が90度、地平線が0度
+            
+            # 方位角の設定：0度が北（上）、180度が南（下）
+            ax.set_theta_zero_location('N')
+            ax.set_theta_direction(-1)  # 反時計回りに設定
+
+            # タイトルとプロットを表示
+            ax.set_title(f"Azimuth-Elevation Plot for Satellite Pass")
+            st.pyplot(fig)
